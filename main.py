@@ -56,111 +56,122 @@ def parse_args():
 ### Routine to write the report in csv file      ###
 ####################################################
 def write_csv(headers, total_transaction_data, outfile):
-    with open(outfile, 'w') as csv_file:
-        csv_writer = csv.DictWriter(csv_file, fieldnames=headers,
-                extrasaction='ignore')  # extrasaction='ignore' allows our row dictionaries to have additional keys which aren't specified in fieldnames= and hence not output into the CSV. Without this, DictWriter will complain about *extra* keys (why would they make that behaviour default??)
-        csv_writer.writeheader()
-        csv_writer.writerows(total_transaction_data)
+    if headers is None \
+        or total_transaction_data is None \
+        or outfile is None:
+        raise Exception('One of the inputs argument is Null')
+    try:
+        with open(outfile, 'w') as csv_file:
+            csv_writer = csv.DictWriter(csv_file, fieldnames=headers,
+                    extrasaction='ignore')  # extrasaction='ignore' allows our row dictionaries to have additional keys which aren't specified in fieldnames= and hence not output into the CSV. Without this, DictWriter will complain about *extra* keys (why would they make that behaviour default??)
+            csv_writer.writeheader()
+            csv_writer.writerows(total_transaction_data)
+    except Exception as e:
+        raise e
+
+def genReport_func():
+    try:
+        # Logging Configuration
+        logging.basicConfig(filename='log/run.log',
+                            format=' [%(asctime)s][%(levelname)s] %(message)s',
+                            level=logging.INFO)
+
+        logging.info("Start of Script execution....")
+
+        logging.debug("--> Parsing input arguments.")
+        # Configure using passed options
+        args = parse_args()
+
+        if args.debug:
+            logging.getLogger().setLevel(logging.DEBUG)  # show logging for >= DEBUG level
+            print('Enabling debug logging')
+
+        logging.debug('--> Checking if input file exists: %s' % args.input)
+        if not os.path.exists(args.input):
+            raise Exception('Input file %s does not exists' % args.input)
+        logging.debug('--> Input file exists!!')
+
+        logging.debug('--> Checking size of input file')
+        if not os.path.getsize(args.input):
+            raise Exception('Input file %s is empty' % args.input)
+        logging.debug('--> Input file is non-empty!!')
+
+        logging.debug('--> Checking if outfile extension: : %s' % args.output)
+        name, extension = os.path.splitext(args.output)
+        if extension != '.csv':
+            raise Exception('Wrong output file extension: [%s]!! Expected .csv' % extension)
+        logging.debug('--> Ok!!')
+
+        outpath = os.path.dirname(args.output)
+        if outpath.strip() != '' and outpath.strip() != './':
+            logging.debug('--> Checking if outfile dir path exists: : %s' % outpath)
+            if not os.path.exists(outpath):
+                raise Exception('Output file directory[%s] does not exists!!' % outpath)
+            logging.debug('--> OK')
+
+        i_fields = {
+                        'CLIENT TYPE'      :  (3, 7),
+                        'CLIENT NUMBER'     : (7, 11),
+                        'ACCOUNT NUMBER'    : (11, 15),
+                        'SUBACCOUNT NUMBER' : (15, 19),
+                        'PRODUCT GROUP CODE': (25, 27),
+                        'EXCHANGE CODE'     : (27, 31),
+                        'SYMBOL'            : (31, 37),
+                        'EXPIRATION DATE'   : (37, 45),
+                        'QUANTITY LONG'     : (52, 62),
+                        'QUANTITY SHORT'    : (63, 73),
+                        'TRANSACTION DATE'  : (121, 129),
+        }
+
+        logging.debug('--> Analyzing input file')
+        df = pd.read_fwf(args.input, colspecs=list(i_fields.values()),
+                          names=list(i_fields.keys()),
+                          converters={
+                                        'CLIENT NUMBER': lambda x: str(x),
+                                        'ACCOUNT NUMBER': lambda x: str(x),
+                                        'STATION NAME': lambda x: str(x),
+                                        'SUBACCOUNT NUMBER': lambda x: str(x)
+                                      }
+                         )
+
+        df['NET_QUANTITY'] = df['QUANTITY LONG'] - df['QUANTITY SHORT']
+
+        #Apply Group by rule to sum-up unique transaction by per client per product.
+        aggrObj = df.groupby(['CLIENT TYPE', 'CLIENT NUMBER', 'ACCOUNT NUMBER', 'SUBACCOUNT NUMBER','PRODUCT GROUP CODE', 'EXCHANGE CODE', 'SYMBOL', 'EXPIRATION DATE', 'TRANSACTION DATE'])['NET_QUANTITY'].sum()
+
+        #reset index to get grouped columns back
+        aggrObj = aggrObj.reset_index()
+
+
+        #Covert dataframe to list of dictionary records
+        records = aggrObj.to_dict('records')
+
+        logging.debug('--> Building Transaction Data')
+        total_transaction_data = []
+        for entry in records:
+            client_info = "{0}:{1}:{2}:{3}".format(entry['CLIENT TYPE'], entry['CLIENT NUMBER'],
+                                                   entry['ACCOUNT NUMBER'], entry['SUBACCOUNT NUMBER'])
+            product_info = "{0}:{1}:{2}:{3}".format(entry['PRODUCT GROUP CODE'], entry['EXCHANGE CODE'],
+                                                    entry['SYMBOL'], entry['EXPIRATION DATE'])
+            total_transaction_data.append({
+                "Client_Information": client_info,
+                "Product_Information": product_info,
+                "Total_Transaction_Amount": entry['NET_QUANTITY']})
+
+        csv_headers = ['Client_Information', 'Product_Information', 'Total_Transaction_Amount']
+
+        logging.debug('--> Writing Transaction Data to csv report: %s', args.output)
+        write_csv(csv_headers,total_transaction_data, args.output)
+        logging.debug('--> Successfully wrote csv report!!')
+        #import code;code.interact(local=locals())
+    except Exception as e:
+        PROBLEM_STR = str(e)
+        logging.exception('***: {0}'.format(PROBLEM_STR))
+        print('*** ERROR: {0}'.format(PROBLEM_STR))
+        traceback.print_exc()
+    finally:
+        logging.info("End of Script execution....")
 
 ### Main ###
-try:
-    # Logging Configuration
-    logging.basicConfig(filename='log/run.log',
-                        format=' [%(asctime)s][%(levelname)s] %(message)s',
-                        level=logging.INFO)
-
-    logging.info("Start of Script execution....")
-
-    logging.debug("--> Parsing input arguments.")
-    # Configure using passed options
-    args = parse_args()
-
-    if args.debug:
-        logging.getLogger().setLevel(logging.DEBUG)  # show logging for >= DEBUG level
-        print('Enabling debug logging')
-
-    logging.debug('--> Checking if input file exists: %s' % args.input)
-    if not os.path.exists(args.input):
-        raise Exception('Input file %s does not exists' % args.input)
-    logging.debug('--> Input file exists!!')
-
-    logging.debug('--> Checking size of input file')
-    if not os.path.getsize(args.input):
-        raise Exception('Input file %s is empty' % args.input)
-    logging.debug('--> Input file is non-empty!!')
-
-    logging.debug('--> Checking if outfile extension: : %s' % args.output)
-    name, extension = os.path.splitext(args.output)
-    if extension != '.csv':
-        raise Exception('Wrong output file extension: [%s]!! Expected .csv' % extension)
-    logging.debug('--> Ok!!')
-
-    outpath = os.path.dirname(args.output)
-    if outpath.strip() != '' and outpath.strip() != './':
-        logging.debug('--> Checking if outfile dir path exists: : %s' % outpath)
-        if not os.path.exists(outpath):
-            raise Exception('Output file directory[%s] does not exists!!' % outpath)
-        logging.debug('--> OK')
-
-    i_fields = {
-                    'CLIENT TYPE'      :  (3, 7),
-                    'CLIENT NUMBER'     : (7, 11),
-                    'ACCOUNT NUMBER'    : (11, 15),
-                    'SUBACCOUNT NUMBER' : (15, 19),
-                    'PRODUCT GROUP CODE': (25, 27),
-                    'EXCHANGE CODE'     : (27, 31),
-                    'SYMBOL'            : (31, 37),
-                    'EXPIRATION DATE'   : (37, 45),
-                    'QUANTITY LONG'     : (52, 62),
-                    'QUANTITY SHORT'    : (63, 73),
-                    'TRANSACTION DATE'  : (121, 129),
-    }
-
-    logging.debug('--> Analyzing input file')
-    df = pd.read_fwf(args.input, colspecs=list(i_fields.values()),
-                      names=list(i_fields.keys()),
-                      converters={
-                                    'CLIENT NUMBER': lambda x: str(x),
-                                    'ACCOUNT NUMBER': lambda x: str(x),
-                                    'STATION NAME': lambda x: str(x),
-                                    'SUBACCOUNT NUMBER': lambda x: str(x)
-                                  }
-                     )
-
-    df['NET_QUANTITY'] = df['QUANTITY LONG'] - df['QUANTITY SHORT']
-
-    #Apply Group by rule to sum-up unique transaction by per client per product.
-    aggrObj = df.groupby(['CLIENT TYPE', 'CLIENT NUMBER', 'ACCOUNT NUMBER', 'SUBACCOUNT NUMBER','PRODUCT GROUP CODE', 'EXCHANGE CODE', 'SYMBOL', 'EXPIRATION DATE', 'TRANSACTION DATE'])['NET_QUANTITY'].sum()
-
-    #reset index to get grouped columns back
-    aggrObj = aggrObj.reset_index()
-
-
-    #Covert dataframe to list of dictionary records
-    records = aggrObj.to_dict('records')
-
-    logging.debug('--> Building Transaction Data')
-    total_transaction_data = []
-    for entry in records:
-        client_info = "{0}:{1}:{2}:{3}".format(entry['CLIENT TYPE'], entry['CLIENT NUMBER'],
-                                               entry['ACCOUNT NUMBER'], entry['SUBACCOUNT NUMBER'])
-        product_info = "{0}:{1}:{2}:{3}".format(entry['PRODUCT GROUP CODE'], entry['EXCHANGE CODE'],
-                                                entry['SYMBOL'], entry['EXPIRATION DATE'])
-        total_transaction_data.append({
-            "Client_Information": client_info,
-            "Product_Information": product_info,
-            "Total_Transaction_Amount": entry['NET_QUANTITY']})
-
-    csv_headers = ['Client_Information', 'Product_Information', 'Total_Transaction_Amount']
-
-    logging.debug('--> Writing Transaction Data to csv report: %s', args.output)
-    write_csv(csv_headers,total_transaction_data, args.output)
-    logging.debug('--> Successfully wrote csv report!!')
-    #import code;code.interact(local=locals())
-except Exception as e:
-    PROBLEM_STR = str(e)
-    logging.exception('***: {0}'.format(PROBLEM_STR))
-    print('*** ERROR: {0}'.format(PROBLEM_STR))
-    traceback.print_exc()
-finally:
-    logging.info("End of Script execution....")
+if __name__ == '__main__':
+    genReport_func()
