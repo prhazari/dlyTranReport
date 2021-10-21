@@ -58,3 +58,16 @@ $ cat log/run.log
  [2021-10-21 14:41:15,841][DEBUG] --> Writing Transaction Data to csv report: Output.csv
  [2021-10-21 14:41:15,842][DEBUG] --> Successfully wrote csv report!!
  [2021-10-21 14:41:15,842][INFO] End of Script execution....
+ 
+ Unit-Testing:
+ --------------
+ To run unit test:
+ python3 -m unittest unit-test/test_report.py
+ note: Ensure unittest and other dependent package are installed  
+ Sample run -->
+ $ python3 -m unittest unit-test/test_report.py
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.046s
+
+OK
