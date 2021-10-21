@@ -1,12 +1,12 @@
- [2021-10-21 14:41:15,744][INFO] Start of Script execution....
- [2021-10-21 14:41:15,747][DEBUG] --> Checking if input file exists: Input.txt
- [2021-10-21 14:41:15,748][DEBUG] --> Input file exists!!
- [2021-10-21 14:41:15,748][DEBUG] --> Checking size of input file
- [2021-10-21 14:41:15,748][DEBUG] --> Input file is non-empty!!
- [2021-10-21 14:41:15,748][DEBUG] --> Checking if outfile extension: : Output.csv
- [2021-10-21 14:41:15,748][DEBUG] --> Ok!!
- [2021-10-21 14:41:15,748][DEBUG] --> Analyzing input file
- [2021-10-21 14:41:15,841][DEBUG] --> Building Transaction Data
- [2021-10-21 14:41:15,841][DEBUG] --> Writing Transaction Data to csv report: Output.csv
- [2021-10-21 14:41:15,842][DEBUG] --> Successfully wrote csv report!!
- [2021-10-21 14:41:15,842][INFO] End of Script execution....
+ [2021-10-22 10:33:08,284][INFO] Start of Script execution....
+ [2021-10-22 10:33:08,286][DEBUG] --> Checking if input file exists: Input.txt
+ [2021-10-22 10:33:08,286][DEBUG] --> Input file exists!!
+ [2021-10-22 10:33:08,286][DEBUG] --> Checking size of input file
+ [2021-10-22 10:33:08,286][DEBUG] --> Input file is non-empty!!
+ [2021-10-22 10:33:08,286][DEBUG] --> Checking if outfile extension: : Output.csv
+ [2021-10-22 10:33:08,286][DEBUG] --> Ok!!
+ [2021-10-22 10:33:08,286][DEBUG] --> Analyzing input file
+ [2021-10-22 10:33:08,340][DEBUG] --> Building Transaction Data
+ [2021-10-22 10:33:08,340][DEBUG] --> Writing Transaction Data to csv report: Output.csv
+ [2021-10-22 10:33:08,341][DEBUG] --> Successfully wrote csv report!!
+ [2021-10-22 10:33:08,342][INFO] End of Script execution....
