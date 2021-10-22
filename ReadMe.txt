@@ -16,7 +16,7 @@ Total_Transaction_Amount will be a Net Total of the (QUANTITY LONG - QUANTITY SH
 
 Preqrequiste:
 -------------
-This program runs on python 3.6 and above. It uses pandas package to do run analytics.
+This program runs on python 3.6 and above. It uses pandas package to run few analytics.
 Ensure panda is 1.1.5 or above. 
 
 Syntax and Usage:
